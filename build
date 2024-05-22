@@ -1,0 +1,43 @@
+#!/bin/sh
+# Version: v.22.05.30
+
+SCRIPT_PATH="$(cd "$(dirname "${0}")" && pwd)"
+ODOO_WORK_DIR="${SCRIPT_PATH}"
+. "${ODOO_WORK_DIR}/.env-default" && \
+. "${ODOO_WORK_DIR}/.env-shared" && \
+. "${ODOO_WORK_DIR}/.env-secret"
+cd "${ODOO_WORK_DIR}"
+
+# Check for root user (optional)
+# Commented out since macOS typically doesn't use this approach
+#if [ "$(id -u)" -eq 0 ]; then
+#  /bin/echo "Please don't use sudo command with this script."
+#  exit 1
+#fi
+
+# Cleanup (Optional): Ensure compatibility with macOS filesystem
+# Commented out for now since it's not clear what specific cleanup is required
+#rm -fr ./auto/odoo.conf
+#rm -fr ./auto/addons/*
+#/bin/bash -c "$(/bin/ls -1 ./custom/src | grep -Ev 'private|repos.yaml|addons.yaml' | /usr/bin/awk '{print("rm -fr ./custom/src/" $1)}')"
+
+if [ ! -d "${ODOO_WORK_DIR}/.venv" ]; then
+    /bin/echo 'Run ./bootstrap first!'
+    exit 1
+fi
+
+# Activate virtual environment on macOS
+. "${ODOO_WORK_DIR}/.venv/bin/activate" && \
+
+# Install dependencies
+pip install --quiet "setuptools<58" && \
+pip install --quiet "pip>=20.3" && \
+(pip uninstall --yes -r "${ODOO_WORK_DIR}/requirements-remove-default.txt" 2>/dev/null || true) && \
+pip install --quiet --exists-action w -r "${ODOO_WORK_DIR}/requirements-default.txt" && \
+pip install --quiet --exists-action w -r "${ODOO_WORK_DIR}/requirements.txt" && \
+
+# Run common build script
+"${ODOO_WORK_DIR}/common/build" && \
+
+# Run entrypoint script
+python "${ODOO_WORK_DIR}/common/entrypoint"

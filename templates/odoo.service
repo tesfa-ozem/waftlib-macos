@@ -1,0 +1,16 @@
+[Unit]
+# Version: v.22.05.30
+Description=odoo
+After=network.target
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/odoo
+ExecStart=/home/ubuntu/odoo/odoo-service
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
